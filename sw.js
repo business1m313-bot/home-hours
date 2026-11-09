@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hours-system-v1';
+const CACHE_NAME = 'hours-system';
 const urlsToCache = [
   './index.html',
   'https://cdn.tailwindcss.com',

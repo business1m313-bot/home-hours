@@ -1,1074 +1,1060 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام حساب ساعات الموظفين</title>
-    
-    <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#1e2430">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="ساعات العمل">
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="icon-192.png">
+<!-- PWA Meta Tags -->
+<meta name="theme-color" content="#1e2430">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ساعات العمل">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
 
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Font Cairo -->
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <!-- SheetJS CDN for Excel Generation -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- Supabase JS SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- FontAwesome Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<!-- Google Font Cairo -->
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<!-- SheetJS CDN for Excel Generation -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- Supabase JS SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        darkBg: '#1e2430',
-                        cardBg: '#282f3f',
-                        inputBg: '#1f2533',
-                        accentGreen: '#22c55e',
-                        accentGreenHover: '#16a34a',
-                    },
-                    fontFamily: {
-                        cairo: ['Cairo', 'sans-serif'],
-                    }
+<script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    darkBg: '#1e2430',
+                    cardBg: '#282f3f',
+                    inputBg: '#1f2533',
+                    accentGreen: '#22c55e',
+                    accentGreenHover: '#16a34a',
+                },
+                fontFamily: {
+                    cairo: ['Cairo', 'sans-serif'],
                 }
             }
         }
-    </script>
-    <style>
-        body {
-            font-family: 'Cairo', sans-serif;
-            background-color: #1e2430;
-            color: #e2e8f0;
-        }
+    }
+</script>
+<style>
+    body {
+        font-family: 'Cairo', sans-serif;
+        background-color: #1e2430;
+        color: #e2e8f0;
+    }
 
-        input[type=range] {
-            -webkit-appearance: none;
-            background: #1f2533;
-            border-radius: 8px;
-            height: 10px;
-        }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            height: 22px;
-            width: 22px;
-            border-radius: 50%;
-            background: #22c55e;
-            cursor: pointer;
-            box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
-            transition: transform 0.1s ease;
-        }
-        input[type=range]::-webkit-slider-thumb:hover {
-            transform: scale(1.15);
-        }
+    input[type=range] {
+        -webkit-appearance: none;
+        background: #1f2533;
+        border-radius: 8px;
+        height: 10px;
+    }
+    input[type=range]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        height: 22px;
+        width: 22px;
+        border-radius: 50%;
+        background: #22c55e;
+        cursor: pointer;
+        box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+        transition: transform 0.1s ease;
+    }
+    input[type=range]::-webkit-slider-thumb:hover {
+        transform: scale(1.15);
+    }
 
-        .fade-in {
-            animation: fadeIn 0.3s ease-out forwards;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-    
-        body.light-theme {
-            background-color: #f1f5f9 !important;
-            color: #0f172a !important;
-        }
-        body.light-theme .bg-cardBg {
-            background-color: #ffffff !important;
-            border-color: #cbd5e1 !important;
-            color: #0f172a !important;
-        }
-        body.light-theme .bg-inputBg {
-            background-color: #f8fafc !important;
-            color: #0f172a !important;
-            border-color: #cbd5e1 !important;
-        }
-        body.light-theme .text-white {
-            color: #0f172a !important;
-        }
-        body.light-theme .text-gray-200,
-        body.light-theme .text-gray-300,
-        body.light-theme .text-gray-400 {
-            color: #475569 !important;
-        }
-        body.light-theme header {
-            border-color: #cbd5e1 !important;
-        }
-        body.light-theme select, 
-        body.light-theme input[type="text"],
-        body.light-theme input[type="password"] {
-            background-color: #f8fafc !important;
-            color: #0f172a !important;
-            border-color: #cbd5e1 !important;
-        }
-    </style>
-</head>
-<body class="min-h-screen flex flex-col justify-between items-center p-4 selection:bg-green-500 selection:text-white">
+    .fade-in {
+        animation: fadeIn 0.3s ease-out forwards;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
 
-    <!-- Header Bar -->
-    <header class="w-full max-w-4xl flex justify-between items-center py-3 px-4 mb-2 border-b border-gray-700/50">
-        <div class="flex items-center space-x-3 space-x-reverse">
-            <div class="w-9 h-9 rounded-lg bg-green-500/10 border border-green-500/30 flex items-center justify-center text-green-400 font-bold">
-                <i class="fa-solid fa-user-clock text-lg"></i>
+    body.light-theme {
+        background-color: #f1f5f9 !important;
+        color: #0f172a !important;
+    }
+    body.light-theme .bg-cardBg {
+        background-color: #ffffff !important;
+        border-color: #cbd5e1 !important;
+        color: #0f172a !important;
+    }
+    body.light-theme .bg-inputBg {
+        background-color: #f8fafc !important;
+        color: #0f172a !important;
+        border-color: #cbd5e1 !important;
+    }
+    body.light-theme .text-white {
+        color: #0f172a !important;
+    }
+    body.light-theme .text-gray-200,
+    body.light-theme .text-gray-300,
+    body.light-theme .text-gray-400 {
+        color: #475569 !important;
+    }
+    body.light-theme header {
+        border-color: #cbd5e1 !important;
+    }
+    body.light-theme select, 
+    body.light-theme input[type="text"],
+    body.light-theme input[type="password"] {
+        background-color: #f8fafc !important;
+        color: #0f172a !important;
+        border-color: #cbd5e1 !important;
+    }
+</style>
+
+
+<!-- Header Bar -->
+<header class="w-full max-w-4xl flex justify-between items-center py-3 px-4 mb-2 border-b border-gray-700/50">
+    <div class="flex items-center space-x-3 space-x-reverse">
+        <div class="w-9 h-9 rounded-lg bg-green-500/10 border border-green-500/30 flex items-center justify-center text-green-400 font-bold">
+            <i class="fa-solid fa-user-clock text-lg"></i>
+        </div>
+        <span class="font-bold text-lg text-gray-200">نظام حساب الساعات</span>
+    </div>
+    <div class="flex items-center space-x-2 space-x-reverse">
+        <button onclick="toggleTheme()" class="flex items-center space-x-1.5 space-x-reverse bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded-lg text-sm transition-all duration-200 shadow-md border border-gray-600" title="تغيير المظهر (فاتح/داكن)">
+            <i id="theme-icon" class="fa-solid fa-moon"></i>
+            <span id="theme-text" class="hidden sm:inline">داكن</span>
+        </button>
+        <button id="btn-admin-auth" onclick="openAdminAuthModal()" class="flex items-center space-x-2 space-x-reverse bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm transition-all duration-200 shadow-md border border-gray-600">
+            <i class="fa-solid fa-user-gear"></i>
+            <span>إدارة</span>
+        </button>
+    </div>
+</header>
+
+<!-- System Disabled Notice Overlay -->
+<div id="system-disabled-banner" class="hidden w-full max-w-md bg-red-950/80 border border-red-600/80 text-red-200 p-6 rounded-2xl text-center my-auto shadow-2xl fade-in">
+    <div class="w-16 h-16 bg-red-500/20 text-red-400 border border-red-500/40 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+        <i class="fa-solid fa-power-off"></i>
+    </div>
+    <h2 class="text-xl font-bold text-white mb-2">النظام متوقف حالياً</h2>
+    <p class="text-sm text-gray-300">تم إيقاف استقبال الساعات مؤقتاً من قبل الإدارة</p>
+</div>
+
+<!-- Main Content Container -->
+<main id="main-container" class="w-full max-w-4xl flex-grow flex items-center justify-center py-6">
+
+    <!-- STEP 1: Login Screen -->
+    <div id="login-section" class="w-full max-w-md bg-cardBg rounded-2xl p-8 shadow-2xl border border-gray-700/60 fade-in text-center my-auto">
+        <h1 class="text-2xl font-bold text-white mb-2">ساعات المنزل</h1>
+        <p class="text-sm text-gray-400 mb-8">مؤسسة المصطفى للإرشاد والتوعية الدينية</p>
+        
+        <form onsubmit="handleLogin(event)" class="space-y-6">
+            <div class="relative flex items-center">
+                <input 
+                    type="password" 
+                    id="passcode-input" 
+                    placeholder="أدخل كلمة المرور" 
+                    required
+                    class="w-full bg-inputBg text-center text-white placeholder-gray-500 py-3.5 pr-12 pl-12 rounded-xl border border-gray-700 focus:outline-none focus:border-green-500 text-lg transition duration-200"
+                />
+                <button 
+                    type="button" 
+                    onclick="togglePasswordVisibility('passcode-input', 'toggle-eye-icon')" 
+                    class="absolute left-3 text-gray-400 hover:text-green-400 transition-colors duration-200 p-2 focus:outline-none"
+                    title="إظهار/إخفاء كلمة المرور">
+                    <i id="toggle-eye-icon" class="fa-solid fa-eye-slash text-xl transition-all duration-300"></i>
+                </button>
             </div>
-            <span class="font-bold text-lg text-gray-200">نظام حساب الساعات</span>
-        </div>
-        <div class="flex items-center space-x-2 space-x-reverse">
-            <button onclick="toggleTheme()" class="flex items-center space-x-1.5 space-x-reverse bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded-lg text-sm transition-all duration-200 shadow-md border border-gray-600" title="تغيير المظهر (فاتح/داكن)">
-                <i id="theme-icon" class="fa-solid fa-moon"></i>
-                <span id="theme-text" class="hidden sm:inline">داكن</span>
+            
+            <button 
+                type="submit" 
+                class="w-full bg-accentGreen hover:bg-accentGreenHover text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition duration-200 text-lg">
+                دخول
             </button>
-            <button id="btn-admin-auth" onclick="openAdminAuthModal()" class="flex items-center space-x-2 space-x-reverse bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm transition-all duration-200 shadow-md border border-gray-600">
-                <i class="fa-solid fa-user-gear"></i>
-                <span>إدارة</span>
-            </button>
-        </div>
-    </header>
+        </form>
 
-    <!-- System Disabled Notice Overlay -->
-    <div id="system-disabled-banner" class="hidden w-full max-w-md bg-red-950/80 border border-red-600/80 text-red-200 p-6 rounded-2xl text-center my-auto shadow-2xl fade-in">
-        <div class="w-16 h-16 bg-red-500/20 text-red-400 border border-red-500/40 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
-            <i class="fa-solid fa-power-off"></i>
+        <div id="login-error" class="hidden mt-4 text-red-400 text-sm font-semibold bg-red-950/40 border border-red-800/50 p-2.5 rounded-lg">
+            <i class="fa-solid fa-triangle-exclamation ml-1"></i> كلمة المرور غير صحيحة
         </div>
-        <h2 class="text-xl font-bold text-white mb-2">النظام متوقف حالياً</h2>
-        <p class="text-sm text-gray-300">تم إيقاف استقبال الساعات مؤقتاً من قبل الإدارة</p>
     </div>
 
-    <!-- Main Content Container -->
-    <main id="main-container" class="w-full max-w-4xl flex-grow flex items-center justify-center py-6">
+    <!-- STEP 2: Main Working Dashboard -->
+    <div id="dashboard-section" class="hidden w-full max-w-2xl bg-cardBg rounded-2xl p-6 sm:p-8 shadow-2xl border border-gray-700/60 fade-in">
+        <div class="flex justify-between items-center mb-6 border-b border-gray-700/60 pb-4">
+            <div>
+                <h2 class="text-xl font-bold text-white">سجل ساعات عملك</h2>
+                <p class="text-xs text-gray-400">قم بإدخال البيانات واضغط على إتمام العملية للحفظ</p>
+            </div>
+        </div>
 
-        <!-- STEP 1: Login Screen -->
-        <div id="login-section" class="w-full max-w-md bg-cardBg rounded-2xl p-8 shadow-2xl border border-gray-700/60 fade-in text-center my-auto">
-            <h1 class="text-2xl font-bold text-white mb-2">ساعات المنزل</h1>
-            <p class="text-sm text-gray-400 mb-8">مؤسسة المصطفى للإرشاد والتوعية الدينية</p>
-            
-            <form onsubmit="handleLogin(event)" class="space-y-6">
-                <div class="relative flex items-center">
+        <form id="hours-form" onsubmit="event.preventDefault(); triggerConfirmation();" class="space-y-6">
+            <!-- 1. Employee Name -->
+            <div class="relative">
+                <label class="block text-sm font-semibold text-gray-300 mb-2">اسمك الثلاثي مع اللقب</label>
+                <div class="relative">
+                    <span class="absolute right-3.5 top-3.5 text-gray-500">
+                        <i class="fa-solid fa-user"></i>
+                    </span>
                     <input 
-                        type="password" 
-                        id="passcode-input" 
-                        placeholder="أدخل كلمة المرور" 
+                        type="text" 
+                        id="emp-name" 
                         required
-                        class="w-full bg-inputBg text-center text-white placeholder-gray-500 py-3.5 pr-12 pl-12 rounded-xl border border-gray-700 focus:outline-none focus:border-green-500 text-lg transition duration-200"
+                        autocomplete="off"
+                        oninput="handleNameInputChange(this.value)"
+                        placeholder="أدخل اسمك" 
+                        class="w-full bg-inputBg text-white placeholder-gray-500 pr-10 pl-4 py-3 rounded-xl border border-gray-700 focus:outline-none focus:border-green-500 transition"
                     />
-                    <button 
-                        type="button" 
-                        onclick="togglePasswordVisibility('passcode-input', 'toggle-eye-icon')" 
-                        class="absolute left-3 text-gray-400 hover:text-green-400 transition-colors duration-200 p-2 focus:outline-none"
-                        title="إظهار/إخفاء كلمة المرور">
-                        <i id="toggle-eye-icon" class="fa-solid fa-eye-slash text-xl transition-all duration-300"></i>
-                    </button>
                 </div>
                 
+                <div id="name-suggestions" class="hidden absolute z-30 w-full mt-1 bg-cardBg border border-gray-600 rounded-xl shadow-2xl max-h-48 overflow-y-auto divide-y divide-gray-700/60"></div>
+
+                <div id="name-validation-error" class="hidden mt-2 text-xs text-red-400 font-semibold bg-red-950/40 border border-red-800/50 p-2 rounded-lg flex items-center gap-1.5">
+                    <i class="fa-solid fa-circle-exclamation text-sm"></i>
+                    <span>الاسم المدخل غير صحيح، يرجى إعادة المحاولة</span>
+                </div>
+            </div>
+
+            <!-- 2. Regular Hours Input -->
+            <div class="bg-inputBg/50 p-4 rounded-xl border border-gray-700/80">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-sm font-semibold text-gray-300">الساعات العادية:</label>
+                    <span class="text-xs text-gray-400">(0 إلى 300 ساعة)</span>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                    <div class="md:col-span-8 flex items-center space-x-3 space-x-reverse">
+                        <input 
+                            type="range" 
+                            id="reg-hours-slider" 
+                            min="0" 
+                            max="300" 
+                            value="0" 
+                            oninput="syncHours('reg', 'slider')"
+                            class="w-full cursor-pointer"
+                        />
+                    </div>
+                    <div class="md:col-span-4 relative">
+                        <input 
+                            type="text" 
+                            id="reg-hours-input" 
+                            value="0" 
+                            oninput="handleManualInput('reg', this.value)"
+                            class="w-full bg-inputBg text-center text-green-400 font-bold text-lg py-2 rounded-lg border border-gray-600 focus:outline-none focus:border-green-500"
+                        />
+                        <span class="absolute left-3 top-2.5 text-xs text-gray-500">ساعة</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Friday Hours Input -->
+            <div class="bg-inputBg/50 p-4 rounded-xl border border-gray-700/80">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-sm font-semibold text-gray-300">ساعات الجمعة:</label>
+                    <span class="text-xs text-gray-400">(0 إلى 300 ساعة)</span>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                    <div class="md:col-span-8 flex items-center space-x-3 space-x-reverse">
+                        <input 
+                            type="range" 
+                            id="fri-hours-slider" 
+                            min="0" 
+                            max="300" 
+                            value="0" 
+                            oninput="syncHours('fri', 'slider')"
+                            class="w-full cursor-pointer"
+                        />
+                    </div>
+                    <div class="md:col-span-4 relative">
+                        <input 
+                            type="text" 
+                            id="fri-hours-input" 
+                            value="0" 
+                            oninput="handleManualInput('fri', this.value)"
+                            class="w-full bg-inputBg text-center text-green-400 font-bold text-lg py-2 rounded-lg border border-gray-600 focus:outline-none focus:border-green-500"
+                        />
+                        <span class="absolute left-3 top-2.5 text-xs text-gray-500">ساعة</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Total Preview -->
+            <div class="flex justify-between items-center bg-green-950/30 border border-green-500/20 p-3.5 rounded-xl">
+                <span class="text-sm font-bold text-gray-300">المجموع الكلي للساعات:</span>
+                <span id="live-total-display" class="text-xl font-extrabold text-green-400">0 ساعة</span>
+            </div>
+
+            <!-- Action Button -->
+            <button 
+                type="submit" 
+                class="w-full bg-accentGreen hover:bg-accentGreenHover text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition duration-200 text-lg flex items-center justify-center space-x-2 space-x-reverse">
+                <i class="fa-solid fa-check-circle"></i>
+                <span>إتمام العملية</span>
+            </button>
+        </form>
+    </div>
+
+</main>
+
+<!-- Modal 1: Confirmation Window -->
+<div id="confirm-modal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 fade-in">
+    <div class="bg-cardBg border border-gray-700 rounded-2xl max-w-md w-full p-6 text-center shadow-2xl">
+        <div class="w-16 h-16 bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+            <i class="fa-solid fa-circle-question"></i>
+        </div>
+        <h3 class="text-lg font-bold text-white mb-2">تأكيد إدخال البيانات</h3>
+        <p class="text-gray-300 mb-6 text-sm">هل أنت متأكد من المعلومات المدخلة؟</p>
+        
+        <div class="bg-inputBg p-3 rounded-xl mb-6 text-xs text-right space-y-1.5 border border-gray-700">
+            <div class="flex justify-between"><span class="text-gray-400">الاسم:</span> <span id="modal-emp-name" class="font-bold text-white"></span></div>
+            <div class="flex justify-between"><span class="text-gray-400">الساعات العادية:</span> <span id="modal-reg-hours" class="font-bold text-green-400"></span></div>
+            <div class="flex justify-between"><span class="text-gray-400">ساعات الجمعة:</span> <span id="modal-fri-hours" class="font-bold text-green-400"></span></div>
+            <div class="flex justify-between border-t border-gray-700 pt-1.5"><span class="text-gray-400">المجموع الكلي:</span> <span id="modal-total-hours" class="font-bold text-green-400"></span></div>
+        </div>
+
+        <div class="flex space-x-3 space-x-reverse">
+            <button onclick="confirmSaveData()" class="flex-1 bg-accentGreen hover:bg-accentGreenHover text-white font-bold py-2.5 rounded-xl transition">
+                نعم
+            </button>
+            <button onclick="closeConfirmModal()" class="flex-1 bg-gray-700 hover:bg-gray-600 text-gray-200 font-bold py-2.5 rounded-xl transition">
+                لا (تعديل)
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 2: Admin Password Dialog -->
+<div id="admin-auth-modal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 fade-in">
+    <div class="bg-cardBg border border-gray-700 rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl">
+        <div class="w-14 h-14 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
+            <i class="fa-solid fa-lock"></i>
+        </div>
+        <h3 class="text-lg font-bold text-white mb-1">قسم الإدارة</h3>
+        <p class="text-xs text-gray-400 mb-4">أدخل الرمز للوصول للوحة التحكم</p>
+
+        <form onsubmit="handleAdminAuth(event)">
+            <div class="relative flex items-center mb-3">
+                <input 
+                    type="password" 
+                    id="admin-passcode-input" 
+                    placeholder="أدخل كلمة المرور" 
+                    required
+                    class="w-full bg-inputBg text-center text-white placeholder-gray-500 py-3 pr-10 pl-10 rounded-xl border border-gray-700 focus:outline-none focus:border-emerald-500"
+                />
                 <button 
-                    type="submit" 
-                    class="w-full bg-accentGreen hover:bg-accentGreenHover text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition duration-200 text-lg">
+                    type="button" 
+                    onclick="togglePasswordVisibility('admin-passcode-input', 'admin-toggle-eye-icon')" 
+                    class="absolute left-3 text-gray-400 hover:text-emerald-400 transition-colors duration-200 focus:outline-none">
+                    <i id="admin-toggle-eye-icon" class="fa-solid fa-eye-slash text-lg transition-all duration-300"></i>
+                </button>
+            </div>
+            
+            <div id="admin-auth-error" class="hidden text-xs text-red-400 mb-3 font-semibold">
+                كلمة المرور غير صحيحة
+            </div>
+
+            <div class="flex space-x-2 space-x-reverse">
+                <button type="submit" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl transition text-sm">
                     دخول
                 </button>
-            </form>
-
-            <div id="login-error" class="hidden mt-4 text-red-400 text-sm font-semibold bg-red-950/40 border border-red-800/50 p-2.5 rounded-lg">
-                <i class="fa-solid fa-triangle-exclamation ml-1"></i> كلمة المرور غير صحيحة
+                <button type="button" onclick="closeAdminAuthModal()" class="flex-1 bg-gray-700 hover:bg-gray-600 text-gray-300 font-bold py-2.5 rounded-xl transition text-sm">
+                    إلغاء
+                </button>
             </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal 3: Full Admin Control Dashboard -->
+<div id="admin-panel-modal" class="hidden fixed inset-0 bg-cardBg z-50 flex flex-col w-full h-full fade-in">
+    <div class="w-full h-full p-4 sm:p-6 text-right flex flex-col overflow-hidden bg-cardBg">
+        <div class="flex justify-between items-center border-b border-gray-700 pb-4 mb-4">
+            <div class="flex items-center space-x-2 space-x-reverse text-emerald-400">
+                <i class="fa-solid fa-sliders text-xl"></i>
+                <h3 class="text-xl font-bold text-white">لوحة التحكم</h3>
+            </div>
+            <button onclick="closeAdminPanel()" class="text-gray-400 hover:text-white p-2 rounded-lg text-lg">
+                <i class="fa-solid fa-xmark text-2xl"></i>
+            </button>
         </div>
 
-        <!-- STEP 2: Main Working Dashboard -->
-        <div id="dashboard-section" class="hidden w-full max-w-2xl bg-cardBg rounded-2xl p-6 sm:p-8 shadow-2xl border border-gray-700/60 fade-in">
-            <div class="flex justify-between items-center mb-6 border-b border-gray-700/60 pb-4">
+        <div class="overflow-y-auto flex-grow space-y-6 pl-1 pr-1">
+            <!-- 1. System On/Off Toggle -->
+            <div class="bg-inputBg/60 p-4 rounded-xl border border-gray-700 flex justify-between items-center">
                 <div>
-                    <h2 class="text-xl font-bold text-white">سجل ساعات عملك</h2>
-                    <p class="text-xs text-gray-400">قم بإدخال البيانات واضغط على إتمام العملية للحفظ</p>
+                    <h4 class="font-bold text-white text-base">حالة النظام</h4>
+                    <p class="text-xs text-gray-400">تشغيل أو إيقاف النظام يدوياً</p>
                 </div>
-            </div>
-
-            <form id="hours-form" onsubmit="event.preventDefault(); triggerConfirmation();" class="space-y-6">
-                <!-- 1. Employee Name -->
-                <div class="relative">
-                    <label class="block text-sm font-semibold text-gray-300 mb-2">اسمك الثلاثي مع اللقب</label>
-                    <div class="relative">
-                        <span class="absolute right-3.5 top-3.5 text-gray-500">
-                            <i class="fa-solid fa-user"></i>
-                        </span>
-                        <input 
-                            type="text" 
-                            id="emp-name" 
-                            required
-                            autocomplete="off"
-                            oninput="handleNameInputChange(this.value)"
-                            placeholder="أدخل اسمك" 
-                            class="w-full bg-inputBg text-white placeholder-gray-500 pr-10 pl-4 py-3 rounded-xl border border-gray-700 focus:outline-none focus:border-green-500 transition"
-                        />
-                    </div>
-                    
-                    <div id="name-suggestions" class="hidden absolute z-30 w-full mt-1 bg-cardBg border border-gray-600 rounded-xl shadow-2xl max-h-48 overflow-y-auto divide-y divide-gray-700/60"></div>
-
-                    <div id="name-validation-error" class="hidden mt-2 text-xs text-red-400 font-semibold bg-red-950/40 border border-red-800/50 p-2 rounded-lg flex items-center gap-1.5">
-                        <i class="fa-solid fa-circle-exclamation text-sm"></i>
-                        <span>الاسم المدخل غير صحيح، يرجى إعادة المحاولة</span>
-                    </div>
-                </div>
-
-                <!-- 2. Regular Hours Input -->
-                <div class="bg-inputBg/50 p-4 rounded-xl border border-gray-700/80">
-                    <div class="flex justify-between items-center mb-2">
-                        <label class="text-sm font-semibold text-gray-300">الساعات العادية:</label>
-                        <span class="text-xs text-gray-400">(0 إلى 300 ساعة)</span>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
-                        <div class="md:col-span-8 flex items-center space-x-3 space-x-reverse">
-                            <input 
-                                type="range" 
-                                id="reg-hours-slider" 
-                                min="0" 
-                                max="300" 
-                                value="0" 
-                                oninput="syncHours('reg', 'slider')"
-                                class="w-full cursor-pointer"
-                            />
-                        </div>
-                        <div class="md:col-span-4 relative">
-                            <input 
-                                type="text" 
-                                id="reg-hours-input" 
-                                value="0" 
-                                oninput="handleManualInput('reg', this.value)"
-                                class="w-full bg-inputBg text-center text-green-400 font-bold text-lg py-2 rounded-lg border border-gray-600 focus:outline-none focus:border-green-500"
-                            />
-                            <span class="absolute left-3 top-2.5 text-xs text-gray-500">ساعة</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 3. Friday Hours Input -->
-                <div class="bg-inputBg/50 p-4 rounded-xl border border-gray-700/80">
-                    <div class="flex justify-between items-center mb-2">
-                        <label class="text-sm font-semibold text-gray-300">ساعات الجمعة:</label>
-                        <span class="text-xs text-gray-400">(0 إلى 300 ساعة)</span>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
-                        <div class="md:col-span-8 flex items-center space-x-3 space-x-reverse">
-                            <input 
-                                type="range" 
-                                id="fri-hours-slider" 
-                                min="0" 
-                                max="300" 
-                                value="0" 
-                                oninput="syncHours('fri', 'slider')"
-                                class="w-full cursor-pointer"
-                            />
-                        </div>
-                        <div class="md:col-span-4 relative">
-                            <input 
-                                type="text" 
-                                id="fri-hours-input" 
-                                value="0" 
-                                oninput="handleManualInput('fri', this.value)"
-                                class="w-full bg-inputBg text-center text-green-400 font-bold text-lg py-2 rounded-lg border border-gray-600 focus:outline-none focus:border-green-500"
-                            />
-                            <span class="absolute left-3 top-2.5 text-xs text-gray-500">ساعة</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Live Total Preview -->
-                <div class="flex justify-between items-center bg-green-950/30 border border-green-500/20 p-3.5 rounded-xl">
-                    <span class="text-sm font-bold text-gray-300">المجموع الكلي للساعات:</span>
-                    <span id="live-total-display" class="text-xl font-extrabold text-green-400">0 ساعة</span>
-                </div>
-
-                <!-- Action Button -->
-                <button 
-                    type="submit" 
-                    class="w-full bg-accentGreen hover:bg-accentGreenHover text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition duration-200 text-lg flex items-center justify-center space-x-2 space-x-reverse">
-                    <i class="fa-solid fa-check-circle"></i>
-                    <span>إتمام العملية</span>
-                </button>
-            </form>
-        </div>
-
-    </main>
-
-    <!-- Modal 1: Confirmation Window -->
-    <div id="confirm-modal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 fade-in">
-        <div class="bg-cardBg border border-gray-700 rounded-2xl max-w-md w-full p-6 text-center shadow-2xl">
-            <div class="w-16 h-16 bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
-                <i class="fa-solid fa-circle-question"></i>
-            </div>
-            <h3 class="text-lg font-bold text-white mb-2">تأكيد إدخال البيانات</h3>
-            <p class="text-gray-300 mb-6 text-sm">هل أنت متأكد من المعلومات المدخلة؟</p>
-            
-            <div class="bg-inputBg p-3 rounded-xl mb-6 text-xs text-right space-y-1.5 border border-gray-700">
-                <div class="flex justify-between"><span class="text-gray-400">الاسم:</span> <span id="modal-emp-name" class="font-bold text-white"></span></div>
-                <div class="flex justify-between"><span class="text-gray-400">الساعات العادية:</span> <span id="modal-reg-hours" class="font-bold text-green-400"></span></div>
-                <div class="flex justify-between"><span class="text-gray-400">ساعات الجمعة:</span> <span id="modal-fri-hours" class="font-bold text-green-400"></span></div>
-                <div class="flex justify-between border-t border-gray-700 pt-1.5"><span class="text-gray-400">المجموع الكلي:</span> <span id="modal-total-hours" class="font-bold text-green-400"></span></div>
-            </div>
-
-            <div class="flex space-x-3 space-x-reverse">
-                <button onclick="confirmSaveData()" class="flex-1 bg-accentGreen hover:bg-accentGreenHover text-white font-bold py-2.5 rounded-xl transition">
-                    نعم
-                </button>
-                <button onclick="closeConfirmModal()" class="flex-1 bg-gray-700 hover:bg-gray-600 text-gray-200 font-bold py-2.5 rounded-xl transition">
-                    لا (تعديل)
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal 2: Admin Password Dialog -->
-    <div id="admin-auth-modal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 fade-in">
-        <div class="bg-cardBg border border-gray-700 rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl">
-            <div class="w-14 h-14 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
-                <i class="fa-solid fa-lock"></i>
-            </div>
-            <h3 class="text-lg font-bold text-white mb-1">قسم الإدارة</h3>
-            <p class="text-xs text-gray-400 mb-4">أدخل الرمز للوصول للوحة التحكم</p>
-
-            <form onsubmit="handleAdminAuth(event)">
-                <div class="relative flex items-center mb-3">
-                    <input 
-                        type="password" 
-                        id="admin-passcode-input" 
-                        placeholder="أدخل كلمة المرور" 
-                        required
-                        class="w-full bg-inputBg text-center text-white placeholder-gray-500 py-3 pr-10 pl-10 rounded-xl border border-gray-700 focus:outline-none focus:border-emerald-500"
-                    />
-                    <button 
-                        type="button" 
-                        onclick="togglePasswordVisibility('admin-passcode-input', 'admin-toggle-eye-icon')" 
-                        class="absolute left-3 text-gray-400 hover:text-emerald-400 transition-colors duration-200 focus:outline-none">
-                        <i id="admin-toggle-eye-icon" class="fa-solid fa-eye-slash text-lg transition-all duration-300"></i>
+                <div class="flex items-center gap-3">
+                    <span id="system-status-label" class="font-bold text-sm text-green-400">النظام مفعل حالياً ✅</span>
+                    <button id="system-toggle-btn" onclick="toggleSystemState()" class="bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2">
+                        <i class="fa-solid fa-power-off"></i>
+                        <span id="system-btn-text">إيقاف النظام</span>
                     </button>
                 </div>
-                
-                <div id="admin-auth-error" class="hidden text-xs text-red-400 mb-3 font-semibold">
-                    كلمة المرور غير صحيحة
-                </div>
-
-                <div class="flex space-x-2 space-x-reverse">
-                    <button type="submit" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl transition text-sm">
-                        دخول
-                    </button>
-                    <button type="button" onclick="closeAdminAuthModal()" class="flex-1 bg-gray-700 hover:bg-gray-600 text-gray-300 font-bold py-2.5 rounded-xl transition text-sm">
-                        إلغاء
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal 3: Full Admin Control Dashboard -->
-    <div id="admin-panel-modal" class="hidden fixed inset-0 bg-cardBg z-50 flex flex-col w-full h-full fade-in">
-        <div class="w-full h-full p-4 sm:p-6 text-right flex flex-col overflow-hidden bg-cardBg">
-            <div class="flex justify-between items-center border-b border-gray-700 pb-4 mb-4">
-                <div class="flex items-center space-x-2 space-x-reverse text-emerald-400">
-                    <i class="fa-solid fa-sliders text-xl"></i>
-                    <h3 class="text-xl font-bold text-white">لوحة التحكم</h3>
-                </div>
-                <button onclick="closeAdminPanel()" class="text-gray-400 hover:text-white p-2 rounded-lg text-lg">
-                    <i class="fa-solid fa-xmark text-2xl"></i>
-                </button>
             </div>
 
-            <div class="overflow-y-auto flex-grow space-y-6 pl-1 pr-1">
-                <!-- 1. System On/Off Toggle -->
-                <div class="bg-inputBg/60 p-4 rounded-xl border border-gray-700 flex justify-between items-center">
+            <!-- 2. Export Excel -->
+            <div class="bg-inputBg/60 p-4 rounded-xl border border-gray-700 space-y-4">
+                <div class="flex justify-between items-center">
                     <div>
-                        <h4 class="font-bold text-white text-base">حالة النظام</h4>
-                        <p class="text-xs text-gray-400">تشغيل أو إيقاف النظام يدوياً</p>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span id="system-status-label" class="font-bold text-sm text-green-400">النظام مفعل حالياً ✅</span>
-                        <button id="system-toggle-btn" onclick="toggleSystemState()" class="bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2">
-                            <i class="fa-solid fa-power-off"></i>
-                            <span id="system-btn-text">إيقاف النظام</span>
-                        </button>
+                        <h4 class="font-bold text-white text-base">تصدير السجلات إلى Excel</h4>
+                        <p class="text-xs text-gray-400">اختر السنة والشهر المطلوب لتصدير السجلات بدقة</p>
                     </div>
                 </div>
 
-                <!-- 2. Export Excel -->
-                <div class="bg-inputBg/60 p-4 rounded-xl border border-gray-700 space-y-4">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <h4 class="font-bold text-white text-base">تصدير السجلات إلى Excel</h4>
-                            <p class="text-xs text-gray-400">اختر السنة والشهر المطلوب لتصدير السجلات بدقة</p>
-                        </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-300 mb-1.5">اختر السنة:</label>
+                        <select id="export-year-select" onchange="updateMonthFilterOptions()" class="w-full bg-cardBg text-white text-sm px-3 py-2.5 rounded-xl border border-gray-600 focus:outline-none focus:border-emerald-500">
+                        </select>
                     </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-300 mb-1.5">اختر السنة:</label>
-                            <select id="export-year-select" onchange="updateMonthFilterOptions()" class="w-full bg-cardBg text-white text-sm px-3 py-2.5 rounded-xl border border-gray-600 focus:outline-none focus:border-emerald-500">
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-300 mb-1.5">اختر الشهر:</label>
-                            <select id="export-month-select" class="w-full bg-cardBg text-white text-sm px-3 py-2.5 rounded-xl border border-gray-600 focus:outline-none focus:border-emerald-500">
-                            </select>
-                        </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-300 mb-1.5">اختر الشهر:</label>
+                        <select id="export-month-select" class="w-full bg-cardBg text-white text-sm px-3 py-2.5 rounded-xl border border-gray-600 focus:outline-none focus:border-emerald-500">
+                        </select>
                     </div>
+                </div>
 
-                    <button onclick="exportToExcelWithFilter()" class="w-full bg-emerald-700 hover:bg-emerald-600 text-white py-2.5 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2 shadow-md">
-                        <i class="fa-solid fa-file-excel"></i>
-                        <span>تحميل ملف Excel</span>
+                <button onclick="exportToExcelWithFilter()" class="w-full bg-emerald-700 hover:bg-emerald-600 text-white py-2.5 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2 shadow-md">
+                    <i class="fa-solid fa-file-excel"></i>
+                    <span>تحميل ملف Excel</span>
+                </button>
+            </div>
+
+            <!-- 3. User Management -->
+            <div class="bg-inputBg/60 p-4 rounded-xl border border-gray-700 space-y-4">
+                <h4 class="font-bold text-white text-base border-b border-gray-700 pb-2">إدارة المستخدمين</h4>
+
+                <div class="flex gap-2">
+                    <input 
+                        type="text" 
+                        id="new-user-name" 
+                        placeholder="أدخل اسم المستخدم الجديد..." 
+                        class="flex-grow bg-cardBg text-white text-sm px-3.5 py-2.5 rounded-xl border border-gray-600 focus:outline-none focus:border-green-500"
+                    />
+                    <button onclick="addNewUser()" class="bg-accentGreen hover:bg-accentGreenHover text-white px-4 py-2.5 rounded-xl text-sm font-bold transition whitespace-nowrap">
+                        <i class="fa-solid fa-plus ml-1"></i> إضافة 
                     </button>
                 </div>
 
-                <!-- 3. User Management -->
-                <div class="bg-inputBg/60 p-4 rounded-xl border border-gray-700 space-y-4">
-                    <h4 class="font-bold text-white text-base border-b border-gray-700 pb-2">إدارة المستخدمين</h4>
-
-                    <div class="flex gap-2">
+                <div class="flex justify-between items-center pt-2">
+                    <span class="text-xs font-bold text-gray-300">قائمة المستخدمين (<span id="user-count">0</span>):</span>
+                    <div class="relative w-1/2">
                         <input 
                             type="text" 
-                            id="new-user-name" 
-                            placeholder="أدخل اسم المستخدم الجديد..." 
-                            class="flex-grow bg-cardBg text-white text-sm px-3.5 py-2.5 rounded-xl border border-gray-600 focus:outline-none focus:border-green-500"
+                            id="search-user-input" 
+                            oninput="filterUsersList(this.value)" 
+                            placeholder="بحث في القائمة..." 
+                            class="w-full bg-cardBg text-white text-xs px-3 py-1.5 pr-8 rounded-lg border border-gray-600 focus:outline-none focus:border-green-500"
                         />
-                        <button onclick="addNewUser()" class="bg-accentGreen hover:bg-accentGreenHover text-white px-4 py-2.5 rounded-xl text-sm font-bold transition whitespace-nowrap">
-                            <i class="fa-solid fa-plus ml-1"></i> إضافة 
-                        </button>
+                        <i class="fa-solid fa-magnifying-glass absolute right-2.5 top-2 text-xs text-gray-400"></i>
                     </div>
+                </div>
 
-                    <div class="flex justify-between items-center pt-2">
-                        <span class="text-xs font-bold text-gray-300">قائمة المستخدمين (<span id="user-count">0</span>):</span>
-                        <div class="relative w-1/2">
-                            <input 
-                                type="text" 
-                                id="search-user-input" 
-                                oninput="filterUsersList(this.value)" 
-                                placeholder="بحث في القائمة..." 
-                                class="w-full bg-cardBg text-white text-xs px-3 py-1.5 pr-8 rounded-lg border border-gray-600 focus:outline-none focus:border-green-500"
-                            />
-                            <i class="fa-solid fa-magnifying-glass absolute right-2.5 top-2 text-xs text-gray-400"></i>
-                        </div>
-                    </div>
-
-                    <div class="max-h-56 overflow-y-auto border border-gray-700 rounded-xl bg-cardBg/50 divide-y divide-gray-800">
-                        <ul id="admin-users-ul" class="text-xs text-gray-200">
-                        </ul>
-                    </div>
+                <div class="max-h-56 overflow-y-auto border border-gray-700 rounded-xl bg-cardBg/50 divide-y divide-gray-800">
+                    <ul id="admin-users-ul" class="text-xs text-gray-200">
+                    </ul>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Toast Notification -->
-    <div id="toast" class="hidden fixed bottom-5 left-5 bg-emerald-600 text-white px-4 py-3 rounded-xl shadow-xl flex items-center space-x-2 space-x-reverse z-50 fade-in">
-        <i class="fa-solid fa-circle-check"></i>
-        <span id="toast-msg">تمت العملية بنجاح</span>
-    </div>
+<!-- Toast Notification -->
+<div id="toast" class="hidden fixed bottom-5 left-5 bg-emerald-600 text-white px-4 py-3 rounded-xl shadow-xl flex items-center space-x-2 space-x-reverse z-50 fade-in">
+    <i class="fa-solid fa-circle-check"></i>
+    <span id="toast-msg">تمت العملية بنجاح</span>
+</div>
 
-    <!-- JavaScript Application Logic with Supabase -->
-    <script>
-        // Register Service Worker for PWA
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('Service Worker registered successfully!', reg))
-                    .catch(err => console.log('Service Worker registration failed:', err));
-            });
-        }
+<!-- JavaScript Application Logic with Supabase -->
+<script>
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('Service Worker registered successfully!', reg))
+                .catch(err => console.log('Service Worker registration failed:', err));
+        });
+    }
 
-        // Supabase Configuration
-        const SUPABASE_URL = "https://bufelwgfsxqmsmfmyhef.supabase.co";
-        const SUPABASE_KEY = "sb_publishable_X1uy0iiniAw7nFhqZgDFWg_eyPRq76h";
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // Supabase Configuration
+    const SUPABASE_URL = "https://bufelwgfsxqmsmfmyhef.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_X1uy0iiniAw7nFhqZgDFWg_eyPRq76h";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        const LOGIN_CODE = "Mb114";
-        const ADMIN_CODE = "Kh1974";
+    const LOGIN_CODE = "Mb114";
+    const ADMIN_CODE = "Kh1974";
 
-        const DEFAULT_USERS = ["السيد اسماعيل مالك الحسيني", "السيد ثامر حافظ الموسوي", "السيد حسن اسماعيل الموسوي", "السيد حسين ابراهيم الموسوي", "السيد سجاد ستار الموسوي", "السيد علي قاسم الموسوي", "السيد كامل رحيم الحسيني", "السيد محمود علي البعاج", "السيد مرتضى محسن الغرابي", "الشيخ احمد حسن عبود العبودي", "الشيخ احمد حسين الفؤادي", "الشيخ احمد حسين الهلالي", "الشيخ احمد عبد الملك الماجدي", "الشيخ احمد كاظم الكناني", "الشيخ اسعد مري صالح الشويلي", "الشيخ ايوب موحي حامدي الازيرجاوي", "الشيخ جاسم علي السويدي", "الشيخ جاسم محسن الوحيلي", "الشيخ جهاد علي الحلفي", "الشيخ حازم محمد الترابي", "الشيخ حامد محسن السراي", "الشيخ حسن بردان البيادلي", "الشيخ حسن صلاح الصالحي", "الشيخ حسون كريم الشويلي", "الشيخ حسين كامل السعيدي", "الشيخ حيدر عبد الحسين شهيد الظالمي", "الشيخ حيدر عبد الحسين نعيم المالكي", "الشيخ حيدر منير الذهيباوي", "الشيخ خالد عزيز الخفاجي", "الشيخ خالد منصور كوين الركابي", "الشيخ خلف فالح ناهي الشويلي", "الشيخ دايم عبد النبي شنشول", "الشيخ رحيم عوده الحسناوي", "الشيخ رشيد تين البديري", "الشيخ سعد هاشم الكرعاوي", "الشيخ شهيد عبد الامير البغدادي", "الشيخ صادق جياد العبادي", "الشيخ ضياء ماجد المازني", "الشيخ عادل إسماعيل كامل السعيدي", "الشيخ عبد العظيم علي الأيرواني", "الشيخ عصام لفته التميمي", "الشيخ عطية محمد الزركوشي", "الشيخ عقيل عطية الحجامي", "الشيخ علي اسعد الشويلي", "الشيخ علي الموصلي", "الشيخ علي عبد الساده الكعبي", "الشيخ علي يوسف الربيعي", "الشيخ عماد فالح الخفاجي", "الشيخ عماد كاظم الدراجي", "الشيخ عمار حسن الجبوري", "الشيخ قاسم برهان الطليباوي", "الشيخ كرار رحمن عبد حسين الحلي", "الشيخ كرار عبد الزهره العبادي", "الشيخ عبد الحسين الراشد", "الشيخ محمد حسين أسعد الشويلي", "الشيخ محمد عبد الزهره العابدي", "الشيخ محمد عبد العظيم ال فرج الله", "الشيخ محمد علي التميمي", "الشيخ محمد فارس القطراني", "الشيخ محمد قيس الكعبي", "الشيخ مسلم ناصر المنصوري", "الشيخ مصطفى حسن الحميداوي", "الشيخ مصطفى محمد العزاوي", "الشيخ مهدي حسن حران الجبوري", "الشيخ مهند عبد الهادي ناجي الوائلي", "الشيخ ميرزا كرار العابدي", "الشيخ نبيل سلمان البزوني", "الشيخ ورد زين العابدين الحلبي السوري", "الشيخ وسام فالح الناصري", "الشيخ يوسف غانم عداي البدري"];
+    const DEFAULT_USERS = ["السيد اسماعيل مالك الحسيني", "السيد ثامر حافظ الموسوي", "السيد حسن اسماعيل الموسوي", "السيد حسين ابراهيم الموسوي", "السيد سجاد ستار الموسوي", "السيد علي قاسم الموسوي", "السيد كامل رحيم الحسيني", "السيد محمود علي البعاج", "السيد مرتضى محسن الغرابي", "الشيخ احمد حسن عبود العبودي", "الشيخ احمد حسين الفؤادي", "الشيخ احمد حسين الهلالي", "الشيخ احمد عبد الملك الماجدي", "الشيخ احمد كاظم الكناني", "الشيخ اسعد مري صالح الشويلي", "الشيخ ايوب موحي حامدي الازيرجاوي", "الشيخ جاسم علي السويدي", "الشيخ جاسم محسن الوحيلي", "الشيخ جهاد علي الحلفي", "الشيخ حازم محمد الترابي", "الشيخ حامد محسن السراي", "الشيخ حسن بردان البيادلي", "الشيخ حسن صلاح الصالحي", "الشيخ حسون كريم الشويلي", "الشيخ حسين كامل السعيدي", "الشيخ حيدر عبد الحسين شهيد الظالمي", "الشيخ حيدر عبد الحسين نعيم المالكي", "الشيخ حيدر منير الذهيباوي", "الشيخ خالد عزيز الخفاجي", "الشيخ خالد منصور كوين الركابي", "الشيخ خلف فالح ناهي الشويلي", "الشيخ دايم عبد النبي شنشول", "الشيخ رحيم عوده الحسناوي", "الشيخ رشيد تين البديري", "الشيخ سعد هاشم الكرعاوي", "الشيخ شهيد عبد الامير البغدادي", "الشيخ صادق جياد العبادي", "الشيخ ضياء ماجد المازني", "الشيخ عادل إسماعيل كامل السعيدي", "الشيخ عبد العظيم علي الأيرواني", "الشيخ عصام لفته التميمي", "الشيخ عطية محمد الزركوشي", "الشيخ عقيل عطية الحجامي", "الشيخ علي اسعد الشويلي", "الشيخ علي الموصلي", "الشيخ علي عبد الساده الكعبي", "الشيخ علي يوسف الربيعي", "الشيخ عماد فالح الخفاجي", "الشيخ عماد كاظم الدراجي", "الشيخ عمار حسن الجبوري", "الشيخ قاسم برهان الطليباوي", "الشيخ كرار رحمن عبد حسين الحلي", "الشيخ كرار عبد الزهره العبادي", "الشيخ عبد الحسين الراشد", "الشيخ محمد حسين أسعد الشويلي", "الشيخ محمد عبد الزهره العابدي", "الشيخ محمد عبد العظيم ال فرج الله", "الشيخ محمد علي التميمي", "الشيخ محمد فارس القطراني", "الشيخ محمد قيس الكعبي", "الشيخ مسلم ناصر المنصوري", "الشيخ مصطفى حسن الحميداوي", "الشيخ مصطفى محمد العزاوي", "الشيخ مهدي حسن حران الجبوري", "الشيخ مهند عبد الهادي ناجي الوائلي", "الشيخ ميرزا كرار العابدي", "الشيخ نبيل سلمان البزوني", "الشيخ ورد زين العابدين الحلبي السوري", "الشيخ وسام فالح الناصري", "الشيخ يوسف غانم عداي البدري"];
 
-        let records = [];
-        let approvedUsers = [];
-        let isSystemActive = true;
+    let records = [];
+    let approvedUsers = [];
+    let isSystemActive = true;
+    let isDataLoaded = false;
 
-        window.onload = async function() {
-            loadTheme();
-            await fetchAllDataFromSupabase();
-            updateLiveTotal();
+    window.onload = async function() {
+        loadTheme();
+        await fetchAllDataFromSupabase();
+        updateLiveTotal();
 
-            // Realtime subscription for instant cross-device sync
-            supabaseClient
-                .channel('public:hours_data')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'hours_data' }, payload => {
-                    fetchAllDataFromSupabase();
-                })
-                .subscribe();
+        // Realtime subscription for instant cross-device sync
+        supabaseClient
+            .channel('public:hours_data')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'hours_data' }, payload => {
+                fetchAllDataFromSupabase();
+            })
+            .subscribe();
 
-            // Periodic fallback poll every 5 seconds
-            setInterval(fetchAllDataFromSupabase, 5000);
-        };
+        // Periodic fallback poll every 5 seconds (only updates records/users without resetting local toggle state if modified)
+        setInterval(fetchAllDataFromSupabase, 5000);
+    };
 
-        async function fetchAllDataFromSupabase() {
-            try {
-                const { data, error } = await supabaseClient
-                    .from('hours_data')
-                    .select('*')
-                    .order('created_at', { ascending: false });
+    async function fetchAllDataFromSupabase() {
+        try {
+            const { data, error } = await supabaseClient
+                .from('hours_data')
+                .select('*')
+                .order('created_at', { ascending: false });
 
-                if (error) {
-                    console.error('Error fetching from Supabase:', error);
-                    return;
-                }
+            if (error) {
+                console.error('Error fetching from Supabase:', error);
+                return;
+            }
 
-                if (data && data.length > 0) {
-                    // Check if records row exists or config row exists
+            if (data && data.length > 0) {
+                const mainRow = data.find(row => row.id === 1);
+                if (mainRow && mainRow.content) {
+                    records = mainRow.content.records || [];
+                    approvedUsers = mainRow.content.approvedUsers || [...DEFAULT_USERS];
+                    
+                    // Only sync system state from cloud if not freshly toggled or first load
+                    if (!isDataLoaded || mainRow.content.isSystemActive !== undefined) {
+                        isSystemActive = mainRow.content.isSystemActive;
+                    }
+                } else {
                     const recRow = data.find(row => row.record_type === 'records');
                     const usersRow = data.find(row => row.record_type === 'users');
                     const stateRow = data.find(row => row.record_type === 'system_state');
 
-                    if (recRow && recRow.payload) {
-                        records = recRow.payload;
-                    } else {
-                        // Fallback filter out metadata rows if stored separately
-                        records = data.filter(d => !d.record_type || d.record_type === 'record').map(d => ({
-                            date: d.date,
-                            timestamp: d.timestamp,
-                            year: d.year,
-                            month: d.month,
-                            name: d.name,
-                            regularHours: d.regularHours,
-                            fridayHours: d.fridayHours,
-                            totalHours: d.totalHours
-                        }));
-                    }
+                    records = recRow?.payload || data.filter(d => !d.record_type || d.record_type === 'record').map(d => ({
+                        date: d.date, timestamp: d.timestamp, year: d.year, month: d.month, name: d.name, regularHours: d.regularHours, fridayHours: d.fridayHours, totalHours: d.totalHours
+                    })) || [];
 
-                    if (usersRow && usersRow.payload) {
-                        approvedUsers = usersRow.payload;
-                    } else {
-                        approvedUsers = [...DEFAULT_USERS];
-                    }
-
-                    if (stateRow && stateRow.payload !== undefined) {
+                    approvedUsers = usersRow?.payload || [...DEFAULT_USERS];
+                    if (!isDataLoaded && stateRow?.payload !== undefined) {
                         isSystemActive = stateRow.payload;
                     }
-                } else {
-                    // Initialize default if table is completely empty
-                    approvedUsers = [...DEFAULT_USERS];
-                    records = [];
-                    isSystemActive = true;
-                    await syncStateToSupabase();
                 }
-
-                approvedUsers = sortUsersList(approvedUsers);
-                applySystemStateUI();
-                renderAdminUsersList();
-            } catch (err) {
-                console.error('Supabase fetch error:', err);
-            }
-        }
-
-        async function syncStateToSupabase() {
-            try {
-                // Upsert system state, users, and records into Supabase
-                // We can store config rows with specific identifiers
-                await supabaseClient.from('hours_data').upsert([
-                    { id: 999991, record_type: 'system_state', payload: isSystemActive },
-                    { id: 999992, record_type: 'users', payload: approvedUsers },
-                    { id: 999993, record_type: 'records', payload: records }
-                ], { onConflict: 'id' });
-            } catch (e) {
-                console.error('Sync error:', e);
-            }
-        }
-
-        // Theme Toggle Logic
-        let isDarkMode = true;
-
-        function loadTheme() {
-            const savedTheme = localStorage.getItem('app_theme_mode');
-            if (savedTheme === 'light') {
-                isDarkMode = false;
-                document.body.classList.add('light-theme');
             } else {
-                isDarkMode = true;
-                document.body.classList.remove('light-theme');
-            }
-            updateThemeButtonUI();
-        }
-
-        function toggleTheme() {
-            isDarkMode = !isDarkMode;
-            if (isDarkMode) {
-                document.body.classList.remove('light-theme');
-                localStorage.setItem('app_theme_mode', 'dark');
-            } else {
-                document.body.classList.add('light-theme');
-                localStorage.setItem('app_theme_mode', 'light');
-            }
-            updateThemeButtonUI();
-        }
-
-        function updateThemeButtonUI() {
-            const icon = document.getElementById('theme-icon');
-            const text = document.getElementById('theme-text');
-            if (isDarkMode) {
-                icon.className = "fa-solid fa-moon text-yellow-400";
-                if(text) text.textContent = "داكن";
-            } else {
-                icon.className = "fa-solid fa-sun text-amber-500";
-                if(text) text.textContent = "فاتح";
-            }
-        }
-
-        function sortUsersList(arr) {
-            return arr.sort((a, b) => a.localeCompare(b, 'ar', { sensitivity: 'base' }));
-        }
-
-        function applySystemStateUI() {
-            const mainContainer = document.getElementById('main-container');
-            const disabledBanner = document.getElementById('system-disabled-banner');
-            const statusLabel = document.getElementById('system-status-label');
-            const btnText = document.getElementById('system-btn-text');
-            const toggleBtn = document.getElementById('system-toggle-btn');
-
-            if (isSystemActive) {
-                mainContainer.classList.remove('hidden');
-                disabledBanner.classList.add('hidden');
-                if (statusLabel) {
-                    statusLabel.textContent = "النظام مفعل حالياً ✅";
-                    statusLabel.className = "font-bold text-sm text-green-400";
-                }
-                if (btnText) btnText.textContent = "إيقاف النظام";
-                if (toggleBtn) toggleBtn.className = "bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2";
-            } else {
-                mainContainer.classList.add('hidden');
-                disabledBanner.classList.remove('hidden');
-                
-                const confirmModal = document.getElementById('confirm-modal');
-                if (confirmModal) confirmModal.classList.add('hidden');
-                const adminPanelModal = document.getElementById('admin-panel-modal');
-                if (adminPanelModal) adminPanelModal.classList.add('hidden');
-                
-                if (statusLabel) {
-                    statusLabel.textContent = "النظام مغلق حالياً ❌";
-                    statusLabel.className = "font-bold text-sm text-red-400";
-                }
-                if (btnText) btnText.textContent = "تشغيل النظام";
-                if (toggleBtn) toggleBtn.className = "bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2";
-            }
-        }
-
-        async function toggleSystemState() {
-            isSystemActive = !isSystemActive;
-            await syncStateToSupabase();
-            applySystemStateUI();
-            showToast(isSystemActive ? "تم تشغيل النظام" : "تم إيقاف النظام");
-        }
-
-        function renderAdminUsersList(filterText = '') {
-            const ul = document.getElementById('admin-users-ul');
-            const countDisplay = document.getElementById('user-count');
-            ul.innerHTML = '';
-
-            const filtered = approvedUsers.filter(u => u.includes(filterText.trim()));
-            countDisplay.textContent = approvedUsers.length;
-
-            if (filtered.length === 0) {
-                ul.innerHTML = `<li class="p-3 text-center text-gray-500">لا يوجد مستخدمين متاحين.</li>`;
-                return;
-            }
-
-            filtered.forEach(name => {
-                const li = document.createElement('li');
-                li.className = 'flex justify-between items-center p-2.5 hover:bg-inputBg/50 transition';
-                li.innerHTML = `
-                    <span class="font-medium text-gray-200">${name}</span>
-                    <button onclick="deleteUser('${name}')" title="حذف المستخدم" class="text-red-400 hover:text-red-300 p-1 transition">
-                        <i class="fa-solid fa-trash-can"></i>
-                    </button>
-                `;
-                ul.appendChild(li);
-            });
-        }
-
-        function filterUsersList(val) {
-            renderAdminUsersList(val);
-        }
-
-        async function addNewUser() {
-            const input = document.getElementById('new-user-name');
-            const name = input.value.trim();
-            if (!name) {
-                showToast("يرجى إدخال اسم المستخدم!", true);
-                return;
-            }
-            if (approvedUsers.includes(name)) {
-                showToast("هذا الاسم موجود بالفعل", true);
-                return;
-            }
-
-            approvedUsers.push(name);
-            approvedUsers = sortUsersList(approvedUsers);
-            await syncStateToSupabase();
-            renderAdminUsersList();
-            input.value = '';
-            showToast("تم إضافة المستخدم بنجاح إلى القائمة");
-        }
-
-        async function deleteUser(name) {
-            if (confirm(`هل أنت متأكد من حذف المستخدم (${name})؟`)) {
-                approvedUsers = approvedUsers.filter(u => u !== name);
+                approvedUsers = [...DEFAULT_USERS];
+                records = [];
+                isSystemActive = true;
                 await syncStateToSupabase();
-                renderAdminUsersList();
-                showToast("تم حذف المستخدم بنجاح");
-            }
-        }
-
-        function handleNameInputChange(val) {
-            const container = document.getElementById('name-suggestions');
-            const errDiv = document.getElementById('name-validation-error');
-            errDiv.classList.add('hidden');
-
-            const query = val.trim();
-            if (!query) {
-                container.classList.add('hidden');
-                container.innerHTML = '';
-                return;
             }
 
-            const matches = approvedUsers.filter(u => u.includes(query));
-
-            if (matches.length > 0 && matches[0] !== query) {
-                container.innerHTML = '';
-                matches.slice(0, 6).forEach(matchedName => {
-                    const item = document.createElement('div');
-                    item.className = 'p-2.5 hover:bg-emerald-600/30 text-xs font-semibold text-gray-200 cursor-pointer transition flex items-center gap-2';
-                    item.innerHTML = `<i class="fa-solid fa-user-check text-green-400"></i> <span>${matchedName}</span>`;
-                    item.onclick = function() {
-                        document.getElementById('emp-name').value = matchedName;
-                        container.classList.add('hidden');
-                        errDiv.classList.add('hidden');
-                    };
-                    container.appendChild(item);
-                });
-                container.classList.remove('hidden');
-            } else {
-                container.classList.add('hidden');
-            }
+            isDataLoaded = true;
+            approvedUsers = sortUsersList(approvedUsers);
+            applySystemStateUI();
+            renderAdminUsersList();
+        } catch (err) {
+            console.error('Supabase fetch error:', err);
         }
+    }
 
-        function togglePasswordVisibility(inputId, iconId) {
-            const input = document.getElementById(inputId);
-            const icon = document.getElementById(iconId);
-
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
-            } else {
-                input.type = 'password';
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
-            }
-        }
-
-        function convertArabicDigitsToEnglish(str) {
-            return String(str).replace(/[٠-٩]/g, function(d) {
-                return d.charCodeAt(0) - 1632;
-            });
-        }
-
-        function handleLogin(e) {
-            e.preventDefault();
-            const input = document.getElementById('passcode-input').value.trim();
-            const errorDiv = document.getElementById('login-error');
-
-            if (input === LOGIN_CODE) {
-                errorDiv.classList.add('hidden');
-                document.getElementById('login-section').classList.add('hidden');
-                document.getElementById('dashboard-section').classList.remove('hidden');
-            } else {
-                errorDiv.classList.remove('hidden');
-            }
-        }
-
-        function syncHours(type, source) {
-            const slider = document.getElementById(`${type}-hours-slider`);
-            const input = document.getElementById(`${type}-hours-input`);
-
-            if (source === 'slider') {
-                input.value = slider.value;
-            } else {
-                let val = parseInt(slider.value) || 0;
-                val = Math.max(0, Math.min(300, val));
-                slider.value = val;
-                input.value = val;
-            }
-            updateLiveTotal();
-        }
-
-        function handleManualInput(type, value) {
-            const slider = document.getElementById(`${type}-hours-slider`);
-            const input = document.getElementById(`${type}-hours-input`);
-            
-            let cleaned = convertArabicDigitsToEnglish(value).replace(/[^0-9]/g, '');
-            
-            if (cleaned === '') {
-                input.value = '0';
-                slider.value = '0';
-                updateLiveTotal();
-                return;
-            }
-
-            let num = parseInt(cleaned, 10);
-            if (isNaN(num)) num = 0;
-            if (num > 300) num = 300;
-
-            input.value = num;
-            slider.value = num;
-            updateLiveTotal();
-        }
-
-        function updateLiveTotal() {
-            const reg = parseInt(document.getElementById('reg-hours-input').value) || 0;
-            const fri = parseInt(document.getElementById('fri-hours-input').value) || 0;
-            const total = reg + fri;
-            document.getElementById('live-total-display').textContent = total + ' ساعة';
-            return { reg, fri, total };
-        }
-
-        function triggerConfirmation() {
-            const nameInput = document.getElementById('emp-name');
-            const name = nameInput.value.trim();
-            const errDiv = document.getElementById('name-validation-error');
-            document.getElementById('name-suggestions').classList.add('hidden');
-
-            if (!name) {
-                showToast("الاسم المدخل غير صحيح، يرجى إعادة المحاولة", true);
-                return;
-            }
-
-            if (!approvedUsers.includes(name)) {
-                errDiv.classList.remove('hidden');
-                showToast("الاسم المدخل غير صحيح، يرجى إعادة المحاولة", true);
-                return;
-            }
-
-            errDiv.classList.add('hidden');
-            const { reg, fri, total } = updateLiveTotal();
-
-            document.getElementById('modal-emp-name').textContent = name;
-            document.getElementById('modal-reg-hours').textContent = reg + ' ساعة';
-            document.getElementById('modal-fri-hours').textContent = fri + ' ساعة';
-            document.getElementById('modal-total-hours').textContent = total + ' ساعة';
-
-            document.getElementById('confirm-modal').classList.remove('hidden');
-        }
-
-        function closeConfirmModal() {
-            document.getElementById('confirm-modal').classList.add('hidden');
-        }
-
-        async function confirmSaveData() {
-            closeConfirmModal();
-
-            const name = document.getElementById('emp-name').value.trim();
-            const reg = parseInt(document.getElementById('reg-hours-input').value) || 0;
-            const fri = parseInt(document.getElementById('fri-hours-input').value) || 0;
-            const total = reg + fri;
-
-            const now = new Date();
-            const day = now.getDate();
-            const month = now.getMonth() + 1;
-            const year = now.getFullYear();
-            const dateStr = `${day}-${month}-${year} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-
-            const newRecord = {
-                date: dateStr,
-                timestamp: now.getTime(),
-                year: year,
-                month: month,
-                name: name,
-                regularHours: reg,
-                fridayHours: fri,
-                totalHours: total
+    async function syncStateToSupabase() {
+        try {
+            const payloadData = {
+                records: records,
+                approvedUsers: approvedUsers,
+                isSystemActive: isSystemActive
             };
 
-            records.unshift(newRecord);
-            await syncStateToSupabase();
-
-            document.getElementById('emp-name').value = '';
-            document.getElementById('reg-hours-slider').value = 0;
-            document.getElementById('reg-hours-input').value = 0;
-            document.getElementById('fri-hours-slider').value = 0;
-            document.getElementById('fri-hours-input').value = 0;
-            updateLiveTotal();
-
-            showToast("تم حفظ البيانات بنجاح في السحابة");
+            await supabaseClient.from('hours_data').upsert([
+                { id: 1, content: payloadData }
+            ], { onConflict: 'id' });
+        } catch (e) {
+            console.error('Sync error:', e);
         }
+    }
 
-        function openAdminAuthModal() {
-            document.getElementById('admin-passcode-input').value = '';
-            document.getElementById('admin-auth-error').classList.add('hidden');
-            document.getElementById('admin-auth-modal').classList.remove('hidden');
+    // Theme Toggle Logic
+    let isDarkMode = true;
+
+    function loadTheme() {
+        const savedTheme = localStorage.getItem('app_theme_mode');
+        if (savedTheme === 'light') {
+            isDarkMode = false;
+            document.body.classList.add('light-theme');
+        } else {
+            isDarkMode = true;
+            document.body.classList.remove('light-theme');
         }
+        updateThemeButtonUI();
+    }
 
-        function closeAdminAuthModal() {
-            document.getElementById('admin-auth-modal').classList.add('hidden');
+    function toggleTheme() {
+        isDarkMode = !isDarkMode;
+        if (isDarkMode) {
+            document.body.classList.remove('light-theme');
+            localStorage.setItem('app_theme_mode', 'dark');
+        } else {
+            document.body.classList.add('light-theme');
+            localStorage.setItem('app_theme_mode', 'light');
         }
+        updateThemeButtonUI();
+    }
 
-        function handleAdminAuth(e) {
-            e.preventDefault();
-            const pass = document.getElementById('admin-passcode-input').value.trim();
-            const err = document.getElementById('admin-auth-error');
+    function updateThemeButtonUI() {
+        const icon = document.getElementById('theme-icon');
+        const text = document.getElementById('theme-text');
+        if (isDarkMode) {
+            icon.className = "fa-solid fa-moon text-yellow-400";
+            if(text) text.textContent = "داكن";
+        } else {
+            icon.className = "fa-solid fa-sun text-amber-500";
+            if(text) text.textContent = "فاتح";
+        }
+    }
 
-            if (pass === ADMIN_CODE) {
-                err.classList.add('hidden');
-                closeAdminAuthModal();
-                openAdminPanel();
-            } else {
-                err.classList.remove('hidden');
+    function sortUsersList(arr) {
+        return arr.sort((a, b) => a.localeCompare(b, 'ar', { sensitivity: 'base' }));
+    }
+
+    function applySystemStateUI() {
+        const mainContainer = document.getElementById('main-container');
+        const disabledBanner = document.getElementById('system-disabled-banner');
+        const statusLabel = document.getElementById('system-status-label');
+        const btnText = document.getElementById('system-btn-text');
+        const toggleBtn = document.getElementById('system-toggle-btn');
+
+        if (isSystemActive) {
+            mainContainer.classList.remove('hidden');
+            disabledBanner.classList.add('hidden');
+            if (statusLabel) {
+                statusLabel.textContent = "النظام مفعل حالياً ✅";
+                statusLabel.className = "font-bold text-sm text-green-400";
             }
-        }
-
-        function openAdminPanel() {
-            renderAdminUsersList();
-            populateExportFilters();
-            document.getElementById('admin-panel-modal').classList.remove('hidden');
-        }
-
-        function populateExportFilters() {
-            const yearSelect = document.getElementById('export-year-select');
-            const monthSelect = document.getElementById('export-month-select');
-
-            const currentYearVal = yearSelect.value;
-            const currentMonthVal = monthSelect.value;
-
-            const years = [...new Set(records.map(r => r.year))].sort((a, b) => a - b);
+            if (btnText) btnText.textContent = "إيقاف النظام";
+            if (toggleBtn) toggleBtn.className = "bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2";
+        } else {
+            mainContainer.classList.add('hidden');
+            disabledBanner.classList.remove('hidden');
             
-            if (years.length === 0) {
-                years.push(new Date().getFullYear());
+            const confirmModal = document.getElementById('confirm-modal');
+            if (confirmModal) confirmModal.classList.add('hidden');
+            const adminPanelModal = document.getElementById('admin-panel-modal');
+            if (adminPanelModal) adminPanelModal.classList.add('hidden');
+            
+            if (statusLabel) {
+                statusLabel.textContent = "النظام مغلق حالياً ❌";
+                statusLabel.className = "font-bold text-sm text-red-400";
             }
+            if (btnText) btnText.textContent = "تشغيل النظام";
+            if (toggleBtn) toggleBtn.className = "bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2";
+        }
+    }
 
-            yearSelect.innerHTML = '<option value="all">كل السنوات (عام)</option>';
-            years.forEach(y => {
-                const opt = document.createElement('option');
-                opt.value = y;
-                opt.textContent = `سنة ${y}`;
-                yearSelect.appendChild(opt);
+    async function toggleSystemState() {
+        isSystemActive = !isSystemActive;
+        applySystemStateUI();
+        await syncStateToSupabase();
+        showToast(isSystemActive ? "تم تشغيل النظام" : "تم إيقاف النظام");
+    }
+
+    function renderAdminUsersList(filterText = '') {
+        const ul = document.getElementById('admin-users-ul');
+        const countDisplay = document.getElementById('user-count');
+        ul.innerHTML = '';
+
+        const filtered = approvedUsers.filter(u => u.includes(filterText.trim()));
+        countDisplay.textContent = approvedUsers.length;
+
+        if (filtered.length === 0) {
+            ul.innerHTML = `<li class="p-3 text-center text-gray-500">لا يوجد مستخدمين متاحين.</li>`;
+            return;
+        }
+
+        filtered.forEach(name => {
+            const li = document.createElement('li');
+            li.className = 'flex justify-between items-center p-2.5 hover:bg-inputBg/50 transition';
+            li.innerHTML = `
+                <span class="font-medium text-gray-200">${name}</span>
+                <button onclick="deleteUser('${name}')" title="حذف المستخدم" class="text-red-400 hover:text-red-300 p-1 transition">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            `;
+            ul.appendChild(li);
+        });
+    }
+
+    function filterUsersList(val) {
+        renderAdminUsersList(val);
+    }
+
+    async function addNewUser() {
+        const input = document.getElementById('new-user-name');
+        const name = input.value.trim();
+        if (!name) {
+            showToast("يرجى إدخال اسم المستخدم!", true);
+            return;
+        }
+        if (approvedUsers.includes(name)) {
+            showToast("هذا الاسم موجود بالفعل", true);
+            return;
+        }
+
+        approvedUsers.push(name);
+        approvedUsers = sortUsersList(approvedUsers);
+        await syncStateToSupabase();
+        renderAdminUsersList();
+        input.value = '';
+        showToast("تم إضافة المستخدم بنجاح إلى القائمة");
+    }
+
+    async function deleteUser(name) {
+        if (confirm(`هل أنت متأكد من حذف المستخدم (${name})؟`)) {
+            approvedUsers = approvedUsers.filter(u => u !== name);
+            await syncStateToSupabase();
+            renderAdminUsersList();
+            showToast("تم حذف المستخدم بنجاح");
+        }
+    }
+
+    function handleNameInputChange(val) {
+        const container = document.getElementById('name-suggestions');
+        const errDiv = document.getElementById('name-validation-error');
+        errDiv.classList.add('hidden');
+
+        const query = val.trim();
+        if (!query) {
+            container.classList.add('hidden');
+            container.innerHTML = '';
+            return;
+        }
+
+        const matches = approvedUsers.filter(u => u.includes(query));
+
+        if (matches.length > 0 && matches[0] !== query) {
+            container.innerHTML = '';
+            matches.slice(0, 6).forEach(matchedName => {
+                const item = document.createElement('div');
+                item.className = 'p-2.5 hover:bg-emerald-600/30 text-xs font-semibold text-gray-200 cursor-pointer transition flex items-center gap-2';
+                item.innerHTML = `<i class="fa-solid fa-user-check text-green-400"></i> <span>${matchedName}</span>`;
+                item.onclick = function() {
+                    document.getElementById('emp-name').value = matchedName;
+                    container.classList.add('hidden');
+                    errDiv.classList.add('hidden');
+                };
+                container.appendChild(item);
             });
+            container.classList.remove('hidden');
+        } else {
+            container.classList.add('hidden');
+        }
+    }
 
-            if ([...yearSelect.options].some(o => o.value === currentYearVal)) {
-                yearSelect.value = currentYearVal;
-            }
+    function togglePasswordVisibility(inputId, iconId) {
+        const input = document.getElementById(inputId);
+        const icon = document.getElementById(iconId);
 
-            updateMonthFilterOptions();
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        }
+    }
+
+    function convertArabicDigitsToEnglish(str) {
+        return String(str).replace(/[٠-٩]/g, function(d) {
+            return d.charCodeAt(0) - 1632;
+        });
+    }
+
+    function handleLogin(e) {
+        e.preventDefault();
+        const input = document.getElementById('passcode-input').value.trim();
+        const errorDiv = document.getElementById('login-error');
+
+        if (input === LOGIN_CODE) {
+            errorDiv.classList.add('hidden');
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('dashboard-section').classList.remove('hidden');
+        } else {
+            errorDiv.classList.remove('hidden');
+        }
+    }
+
+    function syncHours(type, source) {
+        const slider = document.getElementById(`${type}-hours-slider`);
+        const input = document.getElementById(`${type}-hours-input`);
+
+        if (source === 'slider') {
+            input.value = slider.value;
+        } else {
+            let val = parseInt(slider.value) || 0;
+            val = Math.max(0, Math.min(300, val));
+            slider.value = val;
+            input.value = val;
+        }
+        updateLiveTotal();
+    }
+
+    function handleManualInput(type, value) {
+        const slider = document.getElementById(`${type}-hours-slider`);
+        const input = document.getElementById(`${type}-hours-input`);
+        
+        let cleaned = convertArabicDigitsToEnglish(value).replace(/[^0-9]/g, '');
+        
+        if (cleaned === '') {
+            input.value = '0';
+            slider.value = '0';
+            updateLiveTotal();
+            return;
         }
 
-        function updateMonthFilterOptions() {
-            const yearSelect = document.getElementById('export-year-select');
-            const monthSelect = document.getElementById('export-month-select');
-            const selectedYear = yearSelect.value;
-            const currentMonthVal = monthSelect.value;
+        let num = parseInt(cleaned, 10);
+        if (isNaN(num)) num = 0;
+        if (num > 300) num = 300;
 
-            let availableMonths = [];
-            if (selectedYear === 'all') {
-                availableMonths = [...new Set(records.map(r => r.month))].sort((a, b) => a - b);
-            } else {
-                availableMonths = [...new Set(records.filter(r => String(r.year) === selectedYear).map(r => r.month))].sort((a, b) => a - b);
-            }
+        input.value = num;
+        slider.value = num;
+        updateLiveTotal();
+    }
 
-            monthSelect.innerHTML = '<option value="all">كل الأشهر (عام)</option>';
-            availableMonths.forEach(m => {
-                const opt = document.createElement('option');
-                opt.value = m;
-                opt.textContent = `الشهر ${m}`;
-                monthSelect.appendChild(opt);
-            });
+    function updateLiveTotal() {
+        const reg = parseInt(document.getElementById('reg-hours-input').value) || 0;
+        const fri = parseInt(document.getElementById('fri-hours-input').value) || 0;
+        const total = reg + fri;
+        document.getElementById('live-total-display').textContent = total + ' ساعة';
+        return { reg, fri, total };
+    }
 
-            if ([...monthSelect.options].some(o => o.value === currentMonthVal)) {
-                monthSelect.value = currentMonthVal;
-            } else {
-                monthSelect.value = 'all';
-            }
+    function triggerConfirmation() {
+        const nameInput = document.getElementById('emp-name');
+        const name = nameInput.value.trim();
+        const errDiv = document.getElementById('name-validation-error');
+        document.getElementById('name-suggestions').classList.add('hidden');
+
+        if (!name) {
+            showToast("الاسم المدخل غير صحيح، يرجى إعادة المحاولة", true);
+            return;
         }
 
-        function closeAdminPanel() {
-            document.getElementById('admin-panel-modal').classList.add('hidden');
+        if (!approvedUsers.includes(name)) {
+            errDiv.classList.remove('hidden');
+            showToast("الاسم المدخل غير صحيح، يرجى إعادة المحاولة", true);
+            return;
         }
 
-        function exportToExcelWithFilter() {
-            if (records.length === 0) {
-                showToast("لا توجد بيانات لتصديرها", true);
-                return;
-            }
+        errDiv.classList.add('hidden');
+        const { reg, fri, total } = updateLiveTotal();
 
-            const selectedYear = document.getElementById('export-year-select').value;
-            const selectedMonth = document.getElementById('export-month-select').value;
+        document.getElementById('modal-emp-name').textContent = name;
+        document.getElementById('modal-reg-hours').textContent = reg + ' ساعة';
+        document.getElementById('modal-fri-hours').textContent = fri + ' ساعة';
+        document.getElementById('modal-total-hours').textContent = total + ' ساعة';
 
-            const filteredRecords = records.filter(r => {
-                const matchYear = (selectedYear === 'all') || (String(r.year) === selectedYear);
-                const matchMonth = (selectedMonth === 'all') || (String(r.month) === selectedMonth);
-                return matchYear && matchMonth;
-            });
+        document.getElementById('confirm-modal').classList.remove('hidden');
+    }
 
-            if (filteredRecords.length === 0) {
-                showToast("لا توجد بيانات مطابقة للفترة المحددة", true);
-                return;
-            }
+    function closeConfirmModal() {
+        document.getElementById('confirm-modal').classList.add('hidden');
+    }
 
-            const excelData = filteredRecords.map(r => ({
-                "التاريخ والوقت": r.date,
-                "اسم المستخدم": r.name,
-                "الساعات العادية": r.regularHours,
-                "ساعات الجمعة": r.fridayHours,
-                "المجموع الكلي": r.totalHours
-            }));
+    async function confirmSaveData() {
+        closeConfirmModal();
 
-            const worksheet = XLSX.utils.json_to_sheet(excelData);
-            if(!worksheet['!views']) worksheet['!views'] = [];
-            worksheet['!views'].push({ RTL: true });
+        const name = document.getElementById('emp-name').value.trim();
+        const reg = parseInt(document.getElementById('reg-hours-input').value) || 0;
+        const fri = parseInt(document.getElementById('fri-hours-input').value) || 0;
+        const total = reg + fri;
 
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "ساعات المستخدمين");
+        const now = new Date();
+        const day = now.getDate();
+        const month = now.getMonth() + 1;
+        const year = now.getFullYear();
+        const dateStr = `${day}-${month}-${year} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
 
-            let fileNameSuffix = "الكل";
-            if (selectedYear !== 'all') {
-                fileNameSuffix = `سنة_${selectedYear}`;
-                if (selectedMonth !== 'all') {
-                    fileNameSuffix += `_شهر_${selectedMonth}`;
-                }
-            } else if (selectedMonth !== 'all') {
-                fileNameSuffix = `شهر_${selectedMonth}`;
-            }
+        const newRecord = {
+            date: dateStr,
+            timestamp: now.getTime(),
+            year: year,
+            month: month,
+            name: name,
+            regularHours: reg,
+            fridayHours: fri,
+            totalHours: total
+        };
 
-            const fileName = `ساعات_المنزل_${fileNameSuffix}_${new Date().toISOString().slice(0,10)}.xlsx`;
-            XLSX.writeFile(workbook, fileName);
-            showToast("تم تنزيل ملف Excel بنجاح");
+        records.unshift(newRecord);
+        await syncStateToSupabase();
+
+        document.getElementById('emp-name').value = '';
+        document.getElementById('reg-hours-slider').value = 0;
+        document.getElementById('reg-hours-input').value = 0;
+        document.getElementById('fri-hours-slider').value = 0;
+        document.getElementById('fri-hours-input').value = 0;
+        updateLiveTotal();
+
+        showToast("تم حفظ البيانات بنجاح");
+    }
+
+    function openAdminAuthModal() {
+        document.getElementById('admin-passcode-input').value = '';
+        document.getElementById('admin-auth-error').classList.add('hidden');
+        document.getElementById('admin-auth-modal').classList.remove('hidden');
+    }
+
+    function closeAdminAuthModal() {
+        document.getElementById('admin-auth-modal').classList.add('hidden');
+    }
+
+    function handleAdminAuth(e) {
+        e.preventDefault();
+        const pass = document.getElementById('admin-passcode-input').value.trim();
+        const err = document.getElementById('admin-auth-error');
+
+        if (pass === ADMIN_CODE) {
+            err.classList.add('hidden');
+            closeAdminAuthModal();
+            openAdminPanel();
+        } else {
+            err.classList.remove('hidden');
+        }
+    }
+
+    function openAdminPanel() {
+        renderAdminUsersList();
+        populateExportFilters();
+        document.getElementById('admin-panel-modal').classList.remove('hidden');
+    }
+
+    function populateExportFilters() {
+        const yearSelect = document.getElementById('export-year-select');
+        const monthSelect = document.getElementById('export-month-select');
+
+        const currentYearVal = yearSelect.value;
+        const currentMonthVal = monthSelect.value;
+
+        const years = [...new Set(records.map(r => r.year))].sort((a, b) => a - b);
+        
+        if (years.length === 0) {
+            years.push(new Date().getFullYear());
         }
 
-        function showToast(msg, isError = false) {
-            const toast = document.getElementById('toast');
-            const toastMsg = document.getElementById('toast-msg');
+        yearSelect.innerHTML = '<option value="all">كل السنوات (عام)</option>';
+        years.forEach(y => {
+            const opt = document.createElement('option');
+            opt.value = y;
+            opt.textContent = `سنة ${y}`;
+            yearSelect.appendChild(opt);
+        });
 
-            toastMsg.textContent = msg;
-            if (isError) {
-                toast.classList.remove('bg-emerald-600');
-                toast.classList.add('bg-red-600');
-            } else {
-                toast.classList.remove('bg-red-600');
-                toast.classList.add('bg-emerald-600');
-            }
-
-            toast.classList.add('fade-in');
-            toast.classList.remove('hidden');
-            setTimeout(() => {
-                toast.classList.add('hidden');
-            }, 3500);
+        if ([...yearSelect.options].some(o => o.value === currentYearVal)) {
+            yearSelect.value = currentYearVal;
         }
-    </script>
-</body>
-</html>
+
+        updateMonthFilterOptions();
+    }
+
+    function updateMonthFilterOptions() {
+        const yearSelect = document.getElementById('export-year-select');
+        const monthSelect = document.getElementById('export-month-select');
+        const selectedYear = yearSelect.value;
+        const currentMonthVal = monthSelect.value;
+
+        let availableMonths = [];
+        if (selectedYear === 'all') {
+            availableMonths = [...new Set(records.map(r => r.month))].sort((a, b) => a - b);
+        } else {
+            availableMonths = [...new Set(records.filter(r => String(r.year) === selectedYear).map(r => r.month))].sort((a, b) => a - b);
+        }
+
+        monthSelect.innerHTML = '<option value="all">كل الأشهر (عام)</option>';
+        availableMonths.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m;
+            opt.textContent = `الشهر ${m}`;
+            monthSelect.appendChild(opt);
+        });
+
+        if ([...monthSelect.options].some(o => o.value === currentMonthVal)) {
+            monthSelect.value = currentMonthVal;
+        } else {
+            monthSelect.value = 'all';
+        }
+    }
+
+    function closeAdminPanel() {
+        document.getElementById('admin-panel-modal').classList.add('hidden');
+    }
+
+    function exportToExcelWithFilter() {
+        if (records.length === 0) {
+            showToast("لا توجد بيانات لتصديرها", true);
+            return;
+        }
+
+        const selectedYear = document.getElementById('export-year-select').value;
+        const selectedMonth = document.getElementById('export-month-select').value;
+
+        const filteredRecords = records.filter(r => {
+            const matchYear = (selectedYear === 'all') || (String(r.year) === selectedYear);
+            const matchMonth = (selectedMonth === 'all') || (String(r.month) === selectedMonth);
+            return matchYear && matchMonth;
+        });
+
+        if (filteredRecords.length === 0) {
+            showToast("لا توجد بيانات مطابقة للفترة المحددة", true);
+            return;
+        }
+
+        const excelData = filteredRecords.map(r => ({
+            "التاريخ والوقت": r.date,
+            "اسم المستخدم": r.name,
+            "الساعات العادية": r.regularHours,
+            "ساعات الجمعة": r.fridayHours,
+            "المجموع الكلي": r.totalHours
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(excelData);
+        if(!worksheet['!views']) worksheet['!views'] = [];
+        worksheet['!views'].push({ RTL: true });
+
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "ساعات المستخدمين");
+
+        let fileNameSuffix = "الكل";
+        if (selectedYear !== 'all') {
+            fileNameSuffix = `سنة_${selectedYear}`;
+            if (selectedMonth !== 'all') {
+                fileNameSuffix += `_شهر_${selectedMonth}`;
+            }
+        } else if (selectedMonth !== 'all') {
+            fileNameSuffix = `شهر_${selectedMonth}`;
+        }
+
+        const fileName = `ساعات_المنزل_${fileNameSuffix}_${new Date().toISOString().slice(0,10)}.xlsx`;
+        XLSX.writeFile(workbook, fileName);
+        showToast("تم تنزيل ملف Excel بنجاح");
+    }
+
+    function showToast(msg, isError = false) {
+        const toast = document.getElementById('toast');
+        const toastMsg = document.getElementById('toast-msg');
+
+        toastMsg.textContent = msg;
+        if (isError) {
+            toast.classList.remove('bg-emerald-600');
+            toast.classList.add('bg-red-600');
+        } else {
+            toast.classList.remove('bg-red-600');
+            toast.classList.add('bg-emerald-600');
+        }
+
+        toast.classList.add('fade-in');
+        toast.classList.remove('hidden');
+        setTimeout(() => {
+            toast.classList.add('hidden');
+        }, 3500);
+    }
+</script>
