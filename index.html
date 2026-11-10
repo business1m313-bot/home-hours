@@ -543,39 +543,6 @@ async function fetchAllDataFromSupabase() {
             }
         }
 
-async function fetchAllDataFromSupabase() {
-            try {
-                const { data, error } = await supabaseClient
-                    .from('hours_data')
-                    .select('*')
-                    .eq('id', 1);
-
-                if (error) {
-                    console.error('Error fetching from Supabase:', error);
-                    loadFromLocalStorage();
-                    return;
-                }
-
-                if (data && data.length > 0 && data[0].content) {
-                    const content = data[0].content;
-                    records = content.records || [];
-                    approvedUsers = content.approvedUsers || [...DEFAULT_USERS];
-                    isSystemActive = content.isSystemActive !== undefined ? content.isSystemActive : true;
-                } else {
-                    loadFromLocalStorage();
-                    await syncStateToSupabase();
-                }
-
-                approvedUsers = sortUsersList(approvedUsers);
-                applySystemStateUI();
-                renderAdminUsersList();
-                saveToLocalStorage();
-            } catch (err) {
-                console.error('Supabase fetch error:', err);
-                loadFromLocalStorage();
-            }
-        }
-
         async function syncStateToSupabase() {
             try {
                 const payloadContent = {
@@ -599,8 +566,7 @@ async function fetchAllDataFromSupabase() {
             } catch (e) {
                 console.error('Sync exception:', e);
             }
-        }
-        function saveToLocalStorage() {
+        }        function saveToLocalStorage() {
             localStorage.setItem('hours_records', JSON.stringify(records));
             localStorage.setItem('hours_users', JSON.stringify(approvedUsers));
             localStorage.setItem('hours_system_active', JSON.stringify(isSystemActive));
@@ -674,7 +640,7 @@ async function fetchAllDataFromSupabase() {
                 mainContainer.classList.remove('hidden');
                 disabledBanner.classList.add('hidden');
                 if (statusLabel) {
-                    statusLabel.textContent = "النظام مفعل حالياً ✅";
+                    statusLabel.textContent = "النظام مفعل حالياً";
                     statusLabel.className = "font-bold text-sm text-green-400";
                 }
                 if (btnText) btnText.textContent = "إيقاف النظام";
@@ -689,7 +655,7 @@ async function fetchAllDataFromSupabase() {
                 if (adminPanelModal) adminPanelModal.classList.add('hidden');
                 
                 if (statusLabel) {
-                    statusLabel.textContent = "النظام مغلق حالياً ❌";
+                    statusLabel.textContent = "النظام مغلق حالياً";
                     statusLabel.className = "font-bold text-sm text-red-400";
                 }
                 if (btnText) btnText.textContent = "تشغيل النظام";
