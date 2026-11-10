@@ -543,6 +543,39 @@ async function fetchAllDataFromSupabase() {
             }
         }
 
+async function fetchAllDataFromSupabase() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('hours_data')
+                    .select('*')
+                    .eq('id', 1);
+
+                if (error) {
+                    console.error('Error fetching from Supabase:', error);
+                    loadFromLocalStorage();
+                    return;
+                }
+
+                if (data && data.length > 0 && data[0].content) {
+                    const content = data[0].content;
+                    records = content.records || [];
+                    approvedUsers = content.approvedUsers || [...DEFAULT_USERS];
+                    isSystemActive = content.isSystemActive !== undefined ? content.isSystemActive : true;
+                } else {
+                    loadFromLocalStorage();
+                    await syncStateToSupabase();
+                }
+
+                approvedUsers = sortUsersList(approvedUsers);
+                applySystemStateUI();
+                renderAdminUsersList();
+                saveToLocalStorage();
+            } catch (err) {
+                console.error('Supabase fetch error:', err);
+                loadFromLocalStorage();
+            }
+        }
+
         async function syncStateToSupabase() {
             try {
                 const payloadContent = {
@@ -567,11 +600,6 @@ async function fetchAllDataFromSupabase() {
                 console.error('Sync exception:', e);
             }
         }
-            } catch (e) {
-                console.error('Sync exception:', e);
-            }
-        }
-
         function saveToLocalStorage() {
             localStorage.setItem('hours_records', JSON.stringify(records));
             localStorage.setItem('hours_users', JSON.stringify(approvedUsers));
