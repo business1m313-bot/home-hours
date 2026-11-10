@@ -510,7 +510,7 @@
                 .subscribe();
         };
 
-async function fetchAllDataFromSupabase() {
+        async function fetchAllDataFromSupabase() {
             try {
                 const { data, error } = await supabaseClient
                     .from('hours_data')
@@ -566,7 +566,9 @@ async function fetchAllDataFromSupabase() {
             } catch (e) {
                 console.error('Sync exception:', e);
             }
-        }        function saveToLocalStorage() {
+        }
+
+        function saveToLocalStorage() {
             localStorage.setItem('hours_records', JSON.stringify(records));
             localStorage.setItem('hours_users', JSON.stringify(approvedUsers));
             localStorage.setItem('hours_system_active', JSON.stringify(isSystemActive));
