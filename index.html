@@ -510,27 +510,25 @@
                 .subscribe();
         };
 
-        async function fetchAllDataFromSupabase() {
+async function fetchAllDataFromSupabase() {
             try {
-                // Try to fetch row with id = 1 from content column
                 const { data, error } = await supabaseClient
                     .from('hours_data')
                     .select('*')
-                    .eq('id', 1)
-                    .single();
+                    .eq('id', 1);
 
-                if (error && error.code !== 'PGRST116') {
+                if (error) {
                     console.error('Error fetching from Supabase:', error);
                     loadFromLocalStorage();
                     return;
                 }
 
-                if (data && data.content) {
-                    records = data.content.records || [];
-                    approvedUsers = data.content.approvedUsers || [...DEFAULT_USERS];
-                    isSystemActive = data.content.isSystemActive !== undefined ? data.content.isSystemActive : true;
+                if (data && data.length > 0 && data[0].content) {
+                    const content = data[0].content;
+                    records = content.records || [];
+                    approvedUsers = content.approvedUsers || [...DEFAULT_USERS];
+                    isSystemActive = content.isSystemActive !== undefined ? content.isSystemActive : true;
                 } else {
-                    // Fallback to localStorage if row 1 doesn't exist yet
                     loadFromLocalStorage();
                     await syncStateToSupabase();
                 }
@@ -565,6 +563,10 @@
                 } else {
                     saveToLocalStorage();
                 }
+            } catch (e) {
+                console.error('Sync exception:', e);
+            }
+        }
             } catch (e) {
                 console.error('Sync exception:', e);
             }
