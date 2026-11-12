@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hours-system-v3';
+const CACHE_NAME = 'hours-system-v4';
 const urlsToCache = [
   './',
   './index.html',
