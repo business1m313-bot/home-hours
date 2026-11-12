@@ -1,8 +1,10 @@
-const CACHE_NAME = 'hours-system-v2';
+const CACHE_NAME = 'hours-system-v3';
 const urlsToCache = [
   './',
   './index.html',
-  './manifest.json'
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
 self.addEventListener('install', event => {
@@ -33,13 +35,7 @@ self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request)
       .then(response => {
-        if (response) {
-          return response;
-        }
-        return fetch(event.request).then(networkResponse => {
-          return networkResponse;
-        });
-      }).catch(() => {
+        return response || fetch(event.request);
       })
   );
 });
